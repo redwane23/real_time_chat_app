@@ -1,0 +1,282 @@
+{% load static %}
+{% csrf_token %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'home/css/home.css' %}">
+
+    <title>home page</title>
+</head>
+<body style="background-color: #2F2F2F;">
+        <div class="main" > 
+            <div class="left-side">
+                <div class="profile_section">
+                    {% if request.user.profile.profile_picture%}
+
+                    <img src="{{request.user.profile.profile_picture.url}}" alt="profile picture" class="profile-image">
+                    {% endif %}
+                    
+                    <div class="profile-info">
+                        <!-- <p style="margin:0;">{{request.user.profile.username}}</p> -->
+                    </div>
+
+
+                </div>
+                <div class="room_section">
+
+                <center><input type="text" placeholder="search for rooms/users ..." class="room-search" id='search-rooms-users'></center>
+                <div class="search-resaults">
+                    <div class="rooms-results"></div>
+                    <div class="users-results"></div>
+                </div>
+                    <div class="rooms">     
+                        {% for room in context.rooms %}
+                                <div class="room"> 
+                                    <button id="{{room.slug}}" class="join-button {{room.slug}}" >{{room.name}} </button>
+                                    <button class="leave-button {{room.slug}}" > - </button>
+                                </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+            <div class="right-side">
+                <div class="top"> 
+                    <center><p style="font-size: larger;font-weight: 700; font-family: sans-serif; " id="{{context.room.slug}}" class='room_name' > {{context.room.name}} </p></center>
+                </div>
+                <div class="bottom">
+                    <div id="chat"> 
+
+                    </div>
+                    <form method='POST' class="form">
+                        {% csrf_token %}
+                        <input type="text" onfocus="true" placeholder="message..." style="width: 100%;" id="message_input">
+                        <button type="submit" id="message_submit" > Send</button>
+                    </form>                    
+                </div>
+            </div>
+        </div> 
+    {{ request.user.username|json_script:"json-username" }}
+    <script>
+        const csrftoken = "{{ csrf_token }}";
+    </script>
+    <script>
+
+    function scrollToBottom() {
+    let objDiv = document.getElementById("chat");
+        objDiv.scrollTop = objDiv.scrollHeight;
+    }
+    UserName = JSON.parse(document.getElementById('json-username').textContent)
+    let RoomSlug = document.querySelector(".room_name").id;  
+    let nextPageUrl = `http://0.0.0.0:8000/api/get_paginated_messages/${RoomSlug}`;
+    let chatSocket=null;
+
+    function createwebsocket(){ 
+        if (chatSocket) {
+                chatSocket.onclose = function() {};
+                chatSocket.close();
+            }
+        chatSocket=new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/chat/'
+        + RoomSlug
+        + '/'
+        )
+        chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);  
+        if (data.message) {
+            get_latest_message();
+            scrollToBottom();
+        }
+    }
+}
+    createwebsocket();
+    fetchMessages(nextPageUrl,false)
+
+
+    chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);  
+    if (data.message) {
+        alert("im here")
+        get_latest_message()
+        scrollToBottom()
+    }
+    };
+
+    document.querySelector(".rooms").addEventListener("click", function(event) {
+        const target=event.target
+        if (target.classList.contains("join-button")){
+            if (event.target.tagName === "BUTTON") {  
+                RoomSlug = target.id;
+                createwebsocket();
+                url=`http://0.0.0.0:8000/api/get_paginated_messages/${RoomSlug}`
+                const roomNameElement = document.querySelector(".room_name");
+                roomNameElement.textContent = RoomSlug;
+                roomNameElement.id = RoomSlug;  
+
+                fetchMessages(url,false)
+            }
+        }
+        else if (target.classList.contains("leave-button")) {
+            room_membership(target.classList[1],'leave')
+    }
+
+        });
+
+    document.querySelector('#search-rooms-users').addEventListener("input",function(event){
+            if(event.target.value){ 
+                fetch(`/api/get_room/${event.target.value}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data){
+
+                    const RoomsBox= document.querySelector(".rooms-results")
+                    const UsersBox= document.querySelector(".users-results")
+
+                    RoomsBox.innerHTML=''
+                    UsersBox.innerHTML=''
+                    data.rooms.forEach(room =>{
+                        const roomElement = document.createElement("div");
+                        roomElement.className="searched-room"
+
+                        roomElement.innerHTML=`
+                        <p>${room.name}</p>
+                        <button onclick='room_membership("${room.name}","join")'>+</button>
+                        `
+                        RoomsBox.appendChild(roomElement)                        
+                    })
+
+                    data.users.forEach(user =>{
+                        const userElement = document.createElement("div");
+                        userElement.className="searched-user"
+                        userElement.innerHTML=`                        
+                        <p>${user.username}</p>
+                        ${user.is_friend ? '' : `<button onclick='room_membership("${room.name}","create")'>+</button>`}`            
+
+                        UsersBox.appendChild(userElement)                        
+                    })
+                }
+
+            })
+            .catch(error => console.error("Error fetching rooms:", error));
+        }
+        else{
+            document.querySelector(".rooms-results").innerHTML=''
+            document.querySelector(".users-results").innerHTML=''
+        }
+})
+
+    document.querySelector('#message_input').focus();
+    document.querySelector('#message_input').onkeyup = function(e) {
+        if (e.keyCode === 13) {
+            document.querySelector('#message_submit').click();
+        }
+    };
+    
+    async function get_latest_message(){
+        const response = await fetch(`http://0.0.0.0:8000/api/get_messages/${RoomSlug}`);
+        const data = await response.json(); 
+        const message=data.message
+
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message");
+        if( message.author==UserName){
+            msgDiv.classList.add("recived"); 
+        }
+        msgDiv.innerHTML+=`
+            <p class='message_author'>${message.author}</p>
+            <p class='message_content'>${message.content}</p>
+            <p class='messag_time'>${message.created_at} </p>
+        `
+        document.querySelector('#chat').appendChild(msgDiv)
+        scrollToBottom()
+    }
+
+    //functino get triggered when sending a message
+    document.querySelector('#message_submit').onclick = function(e) {
+    e.preventDefault()
+    const messageInputDom = document.querySelector('#message_input');
+    RoomSlug=document.querySelector(".room_name").id;  
+    const message = messageInputDom.value;
+    if(message!=''){
+    chatSocket.send(JSON.stringify({
+            'message': message,
+            'username': UserName,
+            'room': RoomSlug,
+        }));   
+        messageInputDom.value = '';        
+    }
+        return false    
+    };
+
+    function getCSRFToken() {
+    return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    }
+
+    function room_membership(room_name,action) {
+    fetch(`/api/join_room/${room_name}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken(), 
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: action }) 
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            console.log("User added to room:", data.room);
+            window.location.reload();
+        } else {
+            console.error("Error:", data.error);
+        }
+    })
+    .catch(error => console.error("Request failed:", error));
+    }
+    
+
+    async function fetchMessages(url, append = false) {
+    if (!url) return;  
+
+    const response = await fetch(url);
+    const data = await response.json(); 
+    const messages=data.messages
+
+    const chatDiv = document.getElementById("chat");
+    if(!append){
+        chatDiv.innerHTML=""
+    }
+    const oldHeight = chatDiv.scrollHeight;
+
+    data.results.messages.forEach(message => {
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message");
+        if (message.author==UserName){
+        msgDiv.classList.add("recived");
+
+        }
+        msgDiv.innerHTML=`
+                    <p class='message_author'>${message.author}</p>
+                    <p class='message_content'>${message.content}</p>
+                    <p class='messag_time'>${message.created_at} </p>
+        `
+        chatDiv.prepend(msgDiv);
+    });
+
+    chatDiv.scrollTop = chatDiv.scrollHeight - oldHeight;
+    nextPageUrl = data.next;
+}
+
+document.getElementById("chat").addEventListener("scroll", function () {
+    if (this.scrollTop === 0) {
+        fetchMessages(nextPageUrl, true);
+    }
+});
+
+    </script>
+</body>
+</html> 

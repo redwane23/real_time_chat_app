@@ -1,0 +1,160 @@
+body{
+    padding: 0;
+    margin: 0;
+}
+.main {
+    max-width: 800px;
+    margin: 0px auto;
+    display: flex;
+    height: 100vh;
+
+    overflow: hidden; /* Prevent overflow */
+}
+
+.left-side {
+    width: 35%;
+    background-color: #347093;
+    overflow-y: auto;
+}
+
+.right-side {
+    width: 65%;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensure it takes full height of `.main` */
+}
+
+.top {
+
+    background-color: #346784;
+}
+
+.bottom {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 85%;
+}
+
+#chat {
+    flex-grow: 1; 
+    overflow-y: auto;
+    padding: 10px;
+    background-color:rgba(70, 156, 156, 0.711);
+    max-height: calc(100% - 50px);
+    display: flex;
+    flex-direction: column;
+    gap:10px;
+    padding: 5px 15px;
+}
+
+form {
+    display: flex;
+    gap: 10px;
+    padding: 5px;
+    border-top: 1px solid #ccc;
+    height: 50px; /* Fix form height */
+}
+
+#message_input {
+    flex-grow: 1;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#message_submit {
+    padding: 8px ;
+    border-radius: 5px;
+    background-color: #1a435b;
+    color: white;
+    cursor: pointer;
+}
+.message{
+    border: 1px solid ;
+    border-radius: 15px;
+    background-color: rgb(91, 151, 151);
+    padding: 2px 2%;
+    width: fit-content;
+    max-width: auto;
+    align-self: flex-end;
+}
+.recived{
+    align-self: flex-start;
+}
+.message_author{
+    padding: 0 15px;
+    margin:0;
+    font-size: smaller;    
+    font-family: sans-serif;
+    margin-bottom: 5px;
+}
+.message_content{
+    padding: 0 ;
+    margin:0;
+    font-family: sans-serif;
+    font-weight: 600;
+    color: rgb(255, 240, 240);
+}
+.room_section{
+    margin-top: 30px;
+}
+.profile_section{
+    width: 100%;
+    background-color: #1a435b;
+
+}
+.profile-info{
+    height: 0;
+}
+.rooms{
+    margin-top: 15px;
+}
+.join-button{
+    width: 80%;
+    padding: 10px;
+    font-size: 1rem;
+    background-color: #1a435b;
+    border: none;
+}
+.leave-button{
+width: 20%;
+}
+.room{
+    background-color: #1a435b4e;
+    display: flex;
+    margin-top:2px ;
+
+}
+
+.messag_time{
+    margin: 0;
+    font-size: 0.5rem;
+    font-weight: 500;
+    float: right;
+}
+.profile-image{
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    margin: 7px;
+}
+.room-search{
+    /* border-radius: 10px; */
+    background-color: white;
+    border: 1px solid;
+    height: 35px;
+    width: 100%;
+    margin: 0;
+}
+.searched-room,.searched-user{
+    display: flex;
+    justify-content: space-between;
+}
+.searched-room p{
+    color: white;
+}
+.rooms-results,.users-results{
+    border-bottom: 2px solid;
+}
+
