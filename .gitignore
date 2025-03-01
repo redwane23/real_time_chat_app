@@ -1,2 +1,4 @@
 #ignoring the db
 db.sqlite3
+#ignoring the existing images
+media/
