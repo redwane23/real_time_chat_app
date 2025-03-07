@@ -49,13 +49,16 @@ class get_messages(APIView):
 def RoomUsersSearch(request,search_term):
     excluded_rooms=Room.objects.exclude(users=request.user)
     exluded_users=User.objects.exclude(id=request.user.id)
+
     filtered_users=UsersFilter({'search':search_term},queryset=exluded_users)
     filtered_rooms=RoomsFilter({'search':search_term},queryset=excluded_rooms)
 
     serialized_rooms=Roomserializer(filtered_rooms.qs,many=True)
     serialized_users = Userserializer(filtered_users.qs, many=True, context={"request": request})
+
     rooms=serialized_rooms.data
     users=serialized_users.data
+
     data={
         'rooms':rooms,
         'users':users,
@@ -67,11 +70,12 @@ def JoinRoom(request,RoomName):
     if request.method =='POST':
         try:
             data = json.loads(request.body)
-            user=request.user  
+            user=request.user 
             action = data.get("action")
             if action=='join':
                 room=Room.objects.get(slug=RoomName)
                 room.users.add(user)
+                return JsonResponse({'RoomSlug':room.slug})
             elif action=='leave':
                 room=Room.objects.get(slug=RoomName)
                 if(room.room_type=='privete'):
@@ -85,6 +89,7 @@ def JoinRoom(request,RoomName):
                 new_room.users.add(user)
                 new_room.users.add(second_user)
                 new_room.save()
+                return JsonResponse({'RoomSlug':new_room.slug})
 
 
             return JsonResponse({'message':'added sucsufully'})

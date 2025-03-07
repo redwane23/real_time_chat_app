@@ -6,8 +6,12 @@ from django.http import JsonResponse
 @login_required
 def room(request,slug):
     user= request.user
-    rooms=user.rooms.all()
-    room=get_object_or_404(rooms,slug=slug)
+    if slug!='':
+        rooms=user.rooms.all()
+        room=get_object_or_404(rooms,slug=slug)
+    else:
+        rooms=[]
+        room=[]
     context={
         'rooms':rooms,
         'room':room,
