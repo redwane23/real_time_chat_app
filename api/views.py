@@ -17,7 +17,7 @@ class get_paginated_messages(APIView):
 
         try:
             room = Room.objects.get(slug=room_slug)
-            messages = Message.objects.filter(room=room).select_related('author')
+            messages = Message.objects.filter(room=room).select_related('author').only('content','created_at','author__username')
             result_page = paginator.paginate_queryset(messages, request)
             serialized_data = MessageSerializer(result_page, many=True).data
 
